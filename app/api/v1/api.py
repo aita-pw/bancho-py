@@ -1,4 +1,4 @@
-""" api: bancho.py's developer api for interacting with server state """
+"""api: bancho.py's developer api for interacting with server state"""
 
 from __future__ import annotations
 
@@ -628,13 +628,11 @@ async def api_get_map_scores(
     else:
         mods = None
 
-    # NOTE: userid will eventually become player_id,
-    # along with everywhere else in the codebase.
     query = [
         "SELECT s.map_md5, s.score, s.pp, s.acc, s.max_combo, s.mods, "
         "s.n300, s.n100, s.n50, s.nmiss, s.ngeki, s.nkatu, s.grade, s.status, "
         "s.mode, s.play_time, s.time_elapsed, s.userid, s.perfect, "
-        "u.name player_name, "
+        "u.name player_name, u.country player_country, "
         "c.id clan_id, c.name clan_name, c.tag clan_tag "
         "FROM scores s "
         "INNER JOIN users u ON u.id = s.userid "
@@ -804,7 +802,7 @@ async def api_get_replay(
                 'attachment; filename="{username} - '
                 "{artist} - {title} [{version}] "
                 '({play_time:%Y-%m-%d}).osr"'
-            ).format(**dict(row._mapping)),
+            ).format(**row),
         },
     )
 

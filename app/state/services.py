@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ipaddress
+import logging
 import pickle
 import re
 import secrets
@@ -11,7 +12,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import TypedDict
 
-import databases
 import datadog as datadog_module
 import datadog.threadstats.base as datadog_client
 import httpx
@@ -21,14 +21,9 @@ from redis import asyncio as aioredis
 import app.settings
 import app.state
 from app._typing import IPAddress
+from app.adapters.database import Database
 from app.logging import Ansi
-from app.logging import Rainbow
 from app.logging import log
-from app.logging import printc
-
-if TYPE_CHECKING:
-    import databases.core
-
 
 STRANGE_LOG_DIR = Path.cwd() / ".data/logs"
 
@@ -39,7 +34,7 @@ SQL_UPDATES_FILE = Path.cwd() / "migrations/migrations.sql"
 """ session objects """
 
 http_client = httpx.AsyncClient()
-database = databases.Database(app.settings.DB_DSN)
+database = Database(app.settings.DB_DSN)
 redis: aioredis.Redis = aioredis.from_url(app.settings.REDIS_DSN)
 
 datadog: datadog_client.ThreadStats | None = None
@@ -249,8 +244,11 @@ async def log_strange_occurrence(obj: object) -> None:
         )
         if response.status_code == 200 and response.read() == b"ok":
             uploaded = True
-            log("Logged strange occurrence to cmyui's server.", Ansi.LBLUE)
-            log("Thank you for your participation! <3", Rainbow)
+            log(
+                "Logged strange occurrence to cmyui's server. "
+                "Thank you for your participation! <3",
+                Ansi.LBLUE,
+            )
         else:
             log(
                 f"Autoupload to cmyui's server failed (HTTP {response.status_code})",
@@ -267,11 +265,13 @@ async def log_strange_occurrence(obj: object) -> None:
         log_file.touch(exist_ok=False)
         log_file.write_bytes(pickled_obj)
 
-        log("Logged strange occurrence to", Ansi.LYELLOW, end=" ")
-        printc("/".join(log_file.parts[-4:]), Ansi.LBLUE)
-
         log(
-            "Greatly appreciated if you could forward this to cmyui#0425 :)",
+            "Logged strange occurrence to" + "/".join(log_file.parts[-4:]),
+            Ansi.LYELLOW,
+        )
+        log(
+            "It would be greatly appreciated if you could forward this to the "
+            "bancho.py development team. To do so, please email josh@akatsuki.gg",
             Ansi.LYELLOW,
         )
 
@@ -394,7 +394,7 @@ async def _get_current_sql_structure_version() -> Version | None:
     )
 
     if res:
-        return Version(*map(int, res))
+        return Version(res["ver_major"], res["ver_minor"], res["ver_micro"])
 
     return None
 
