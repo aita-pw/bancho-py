@@ -31,6 +31,11 @@ chmod +x ~/.docker/cli-plugins/docker-compose
 docker compose version
 
 fuck docker-compose
+
+no sudo docker
+sudo usermod -aG docker $USER
+sudo reboot
+
 ```
 ## License
 
